@@ -127,7 +127,7 @@ function selftest(outdir) {
   b.fonts.family = 'montserrat';
   b.theme.id = 'paper';
   /* the other board on both axes: an early (rev 1.x) P4 with an ST7121 panel,
-   * the guest-bedroom unit found 2026-10-17. Every other fixture is the default. */
+   * a real combination: an early chip with the newest display. Every other fixture is the default. */
   b.board = { chip: 'early', display: 'ST7121' };
   b.cards = [
     card('cover', { id: 'c1', title: 'BLINDS', entity: 'cover.living_room_blinds', x: 30, y: 30, w: 300, h: 430 }),
