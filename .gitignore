@@ -1,0 +1,2 @@
+# generator test output — regenerate with: node tools/generate.js --selftest tools/out
+tools/out/

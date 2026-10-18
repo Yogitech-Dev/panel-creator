@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel Creator — build an M5Stack Tab5 wall panel for Home Assistant</title>
+<meta name="description" content="Lay out a Home Assistant touch panel for the M5Stack Tab5, see exactly how it will look, and download the ESPHome config.">
+<link rel="icon" href="assets/img/yogitech-bear-ink.png">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <!-- The real mark, same file the site's header uses. -->
+  <div class="brand">
+    <img class="brand-mark" src="assets/img/yogitech-bear-ink.png" width="128" height="127" alt="YogiTech">
+    <span class="brand-name">Panel&nbsp;Creator</span>
+    <span class="brand-sub">M5Stack Tab5 · 1280×720</span>
+  </div>
+
+  <!-- Identity, the panel's name, and the three things you do to a FILE.
+       Theme moved to the Panel tab (it is a panel setting) and the preview
+       state to the stage footer (it is a view control, next to the screen
+       picker) — this bar was carrying five controls of three different kinds. -->
+  <div class="top-mid">
+    <label class="field inline">
+      <span>Panel</span>
+      <input id="devFriendly" type="text" spellcheck="false" placeholder="Wall Panel">
+    </label>
+  </div>
+
+  <div class="top-right">
+    <button class="btn ghost" id="btnLoad" title="Open a saved .panelcreator.json">Open</button>
+    <button class="btn ghost" id="btnSave" title="Save the design so you can edit it later">Save</button>
+    <button class="btn primary" id="btnExport">Generate firmware</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- ================= LEFT ================= -->
+  <aside class="left">
+    <div class="panel-title">Add a card</div>
+    <div id="palette"></div>
+
+    <div class="panel-title row-between">
+      <span>On the panel</span>
+      <button class="linkbtn" id="btnImport" title="Paste a list of entities from Home Assistant">Import</button>
+    </div>
+    <ul class="cardlist" id="cardList"></ul>
+
+    <div class="left-foot">
+      <button class="linkbtn" id="btnReset">Start over</button>
+      <span class="dot">·</span>
+      <button class="linkbtn" id="btnHelp">How this works</button>
+    </div>
+  </aside>
+
+  <!-- ================= CENTRE ================= -->
+  <main class="main">
+    <div class="stage-wrap" id="stageWrap"></div>
+    <div class="stage-foot">
+      <span class="dim" id="dims">1280 × 720 px · 11.6 px/mm</span>
+      <details class="keys">
+        <summary>Keys</summary>
+        <div class="keys-pop">
+          <span><kbd>drag</kbd>move a card</span>
+          <span><kbd>edge</kbd>resize it</span>
+          <span><kbd>↑↓←→</kbd>nudge by one pixel</span>
+          <span><kbd>alt + ↑↓←→</kbd>resize by one pixel</span>
+          <span><kbd>del</kbd>remove the selected card</span>
+        </div>
+      </details>
+      <span class="grow"></span>
+      <label class="field inline">
+        <span>Preview</span>
+        <select id="demoPick">
+          <option value="evening">Some on</option>
+          <option value="on">All on</option>
+          <option value="off">All off</option>
+        </select>
+      </label>
+      <label class="field inline"><span>Screen</span><select id="pagePick"></select></label>
+      <label class="check"><input type="checkbox" id="rotPortrait"> Portrait</label>
+    </div>
+  </main>
+
+  <!-- ================= RIGHT ================= -->
+  <aside class="right">
+    <div class="tabs">
+      <button class="tab is-on" data-tab="card">Card</button>
+      <button class="tab" data-tab="panel">Panel</button>
+      <button class="tab" data-tab="voice">Voice &amp; sound</button>
+    </div>
+    <div class="tabbody" id="tabCard"></div>
+    <div class="tabbody hidden" id="tabPanel"></div>
+    <div class="tabbody hidden" id="tabVoice"></div>
+  </aside>
+</div>
+
+<footer class="issues" id="issues"></footer>
+
+<!-- Shown INSTEAD of the editor under 900px. The shell is three fixed columns
+     around a 1280x720 stage and the body does not scroll, so a phone gets a
+     broken layout rather than a small one. Say so. -->
+<div class="toosmall">
+  <img src="assets/img/yogitech-bear-ink.png" width="128" height="127" alt="">
+  <h1>Panel Creator needs a wider screen</h1>
+  <p>It is a drawing board for a 1280&nbsp;&times;&nbsp;720 wall panel, shown at real size
+     with an inspector either side. That does not fold down to a phone, and pretending it
+     does would waste your time.</p>
+  <p class="tiny">Come back on a laptop or a desktop &mdash; anything about 1000&nbsp;px wide
+     and up. Nothing you have done is lost: the design lives in this browser.</p>
+</div>
+
+<!-- ================= MODAL ================= -->
+<div class="modal hidden" id="modal">
+  <div class="modal-card">
+    <header class="modal-head">
+      <h2 id="modalTitle">Generated firmware</h2>
+      <button class="iconbtn" id="modalClose" aria-label="Close">✕</button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json,.panelcreator.json" class="hidden">
+
+<script src="js/theme.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/fonts.js"></script>
+<script src="js/store.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/mdi.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/gen-header.js"></script>
+<script src="js/gen-yaml.js"></script>
+<script src="js/gen-docs.js"></script>
+<script src="js/fanframes.js"></script>
+<script src="js/zip.js"></script>
+<script src="js/entitypick.js"></script>
+<script src="js/inspector.js"></script>
+<script src="js/app.js"></script>
+
+<!-- ANALYTICS — the site's own Umami, on the same website id as the rest of
+     yogitech.eu, so /panel-creator/ turns up beside every other page instead
+     of in a second dashboard. Self-hosted and proxied first-party at /stats:
+     no third party is involved, it sets no cookies and stores no IP, which is
+     why the site carries no consent banner.
+
+     TWO GUARDS, both deliberate:
+     - hostname, because this same folder is meant to run from a file:// double
+       click on somebody's desktop, and a local copy has no business phoning
+       anywhere. It also keeps our own local testing out of the numbers.
+     - the WordPress login cookie, because functions.php skips the tracker for
+       logged-in users so admin activity never shows up. A static page is
+       outside that rule unless it opts in, and numbers that only sometimes
+       exclude the owner are worse than either choice. -->
+<script>
+(function () {
+  var host = location.hostname;
+  if (host !== 'yogitech.eu' && host !== 'www.yogitech.eu') return;
+  if (document.cookie.indexOf('wordpress_logged_in') !== -1) return;
+  var s = document.createElement('script');
+  s.defer = true;
+  s.src = '/stats/script.js';
+  s.setAttribute('data-website-id', '8c2c4b79-c5de-46ab-a866-3d9f413064da');
+  s.setAttribute('data-host-url', 'https://yogitech.eu/stats');
+  s.setAttribute('data-auto-track', 'true');
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>

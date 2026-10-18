@@ -1,0 +1,669 @@
+/* =====================================================================
+ * Panel Creator — editor chrome, in the yogitech.eu PLATE language.
+ *
+ * The site's conceit is a technical drawing sheet on squared paper:
+ * hairline rules, square corners, no shadows on flat chrome, one pastel
+ * doing the accent work. Smart home is sage, so this tool is sage.
+ *
+ * TYPE, retyped 2026-08-17 to match the site's v3.3.2 retype. Martian Mono
+ * used to set nearly every line in here, and mono-as-a-display-face is the
+ * most recognisable machine-generated "technical" look there is. Archivo
+ * carries the structure now; the mono is reserved for things that are
+ * actually data — pixel counts, coordinates, entity ids, generated code.
+ *
+ * Tokens below are copied from ollie-child/style.css. If they change there,
+ * change them here — the two are meant to look like one thing.
+ * ===================================================================== */
+
+:root {
+  --paper:   #f4f1e8;
+  --panel:   #faf8f1;
+  --ink:     #1b1a16;
+  --ink-2:   #5f5a4e;
+  --ink-3:   #6e6a5c;   /* 4.8:1 on paper — the floor for a readable grey */
+  --line:    #c8c2b0;
+  --line-2:  #e2ddce;
+
+  --sage:    #d6e4b0;   /* smart home */
+  --sage-2:  #c2d494;
+  --sage-ink:#57781f;
+  --apricot: #f8d0b0;
+  --apricot-ink: #bc4419;
+  --butter:  #f8e7b2;
+  --sky:     #c9dcee;
+  --rose:    #f4cdd4;
+
+  --struct: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  --data:   'Martian Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --prose:  'Newsreader', Georgia, serif;
+  --logo:   'Quicksand', ui-rounded, system-ui, sans-serif;
+
+  /* Tracking scale, from the site. Small uppercase gets POSITIVE tracking —
+     caps have no ascenders or descenders to separate them. Nothing here gets
+     the old -.04em: that was a monospace being squeezed against the fixed
+     advance width that defines the face. */
+  --tr-l:    -.014em;   /* headings, the wordmark's neighbours */
+  --tr-caps:  .06em;    /* small uppercase labels */
+  --tr-data: -.01em;    /* mono numerals */
+
+  /* Size scale. 11px is a HARD floor — the site's old 8px labels failed on
+     legibility and this tool had 8, 8.5 and 9px doing the same job. */
+  --fs-micro: 11px;     /* uppercase micro-labels */
+  --fs-label: 12px;     /* field labels, buttons, list rows */
+  --fs-lg:    13px;     /* section titles, emphasis */
+  --ease:  cubic-bezier(.22, .75, .25, 1);
+
+  --screen: #16130f;    /* the bezel around the panel preview */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--struct);
+  font-size: var(--fs-label);
+  letter-spacing: normal;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, var(--line-2) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line-2) 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; letter-spacing: inherit; color: inherit; }
+.hidden { display: none !important; }
+.grow { flex: 1; }
+
+/* One class for every small uppercase label in the tool, so they cannot
+   drift apart again. */
+.caps {
+  font-size: var(--fs-micro); text-transform: uppercase;
+  letter-spacing: var(--tr-caps); font-weight: 600; color: var(--ink-3);
+}
+/* Anything that is a measurement, an id or a code — the only places the mono
+   is allowed to appear. */
+.data { font-family: var(--data); letter-spacing: var(--tr-data); font-variant-numeric: tabular-nums; }
+
+/* ---------------- top bar ----------------
+   Identity, the panel's name, and the three things you do to a FILE. The
+   theme picker moved to the Panel tab (it is a panel setting) and the
+   preview-state picker to the stage footer (it is a view control, like the
+   screen picker it now sits beside) — the bar was carrying five controls of
+   three different kinds. */
+.top {
+  display: flex; align-items: center; gap: 20px;
+  height: 52px; padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--ink);
+}
+/* The YogiTech mark, at the site's proportions: the bear reads at 38px in a
+   header twice this tall, so 30 here keeps the same weight against the
+   wordmark. Baseline-aligned text, centre-aligned mark. */
+.brand { display: flex; align-items: center; gap: 11px; white-space: nowrap; }
+.brand-mark { width: 30px; height: 30px; display: block; flex: 0 0 auto; }
+.brand-name {
+  font-family: var(--logo); font-weight: 700; font-size: 19px;
+  letter-spacing: .055em; line-height: 1;
+}
+.brand-sub {
+  font-family: var(--data); font-size: var(--fs-micro); color: var(--ink-3);
+  letter-spacing: var(--tr-data); align-self: flex-end; padding-bottom: 2px;
+}
+
+.top-mid { display: flex; gap: 16px; align-items: center; flex: 1; }
+.top-right { display: flex; gap: 7px; }
+
+.field.inline { display: flex; align-items: center; gap: 8px; }
+.field.inline > span {
+  font-size: var(--fs-micro); color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: var(--tr-caps); font-weight: 600;
+}
+.field.inline input, .field.inline select { height: 28px; }
+
+input[type=text], input[type=number], select, textarea {
+  font-family: var(--struct); font-size: var(--fs-label); letter-spacing: normal;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 4px 8px;
+  min-width: 0;
+}
+input[type=text]:focus, input[type=number]:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--ink); box-shadow: inset 0 -2px 0 var(--sage);
+}
+/* a field holding an id or a number is data, and reads better set as data */
+input.mono, textarea.mono {
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+}
+input[type=color] {
+  width: 38px; height: 28px; padding: 2px; border: 1px solid var(--line);
+  border-radius: 0; background: #fff; cursor: pointer;
+}
+input[type=checkbox] { accent-color: var(--sage-ink); }
+
+.btn {
+  height: 29px; padding: 0 13px; cursor: pointer;
+  font-family: var(--struct); font-size: var(--fs-micro); font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tr-caps);
+  border: 1px solid var(--ink); border-radius: 0;
+  background: #fff; white-space: nowrap;
+  transition: background .16s var(--ease);
+}
+.btn:hover { background: var(--sage); }
+.btn.primary { background: var(--ink); color: var(--paper); }
+.btn.primary:hover { background: var(--sage-ink); border-color: var(--sage-ink); }
+.btn.ghost { background: transparent; border-color: var(--line); font-weight: 500; }
+.btn.ghost:hover { background: #fff; border-color: var(--ink); }
+.btn.small { height: 25px; padding: 0 9px; }
+.linkbtn {
+  background: none; border: 0; padding: 0 0 1px; cursor: pointer;
+  font-family: var(--struct); font-size: var(--fs-micro); font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tr-caps);
+  color: var(--ink-2); border-bottom: 1px solid var(--line);
+}
+.linkbtn:hover { color: var(--apricot-ink); border-color: var(--apricot-ink); }
+.iconbtn { background: none; border: 0; cursor: pointer; font-size: 15px; color: var(--ink-2); padding: 3px 7px; }
+.iconbtn:hover { color: var(--ink); }
+
+/* ---------------- shell ---------------- */
+.shell {
+  display: grid;
+  grid-template-columns: 244px 1fr 330px;
+  height: calc(100% - 52px - 28px);
+}
+.left, .right { background: var(--panel); overflow-y: auto; display: flex; flex-direction: column; }
+.left { border-right: 1px solid var(--ink); }
+.right { border-left: 1px solid var(--ink); }
+
+.panel-title {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-3);
+  padding: 14px 14px 7px;
+  border-bottom: 1px solid var(--line-2);
+  margin-bottom: 9px;
+}
+.row-between { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.row-between > .linkbtn { white-space: nowrap; }
+
+/* ---------------- palette ----------------
+   Grouped rather than a flat wall of twelve: which half of the tool a card
+   belongs to is the first thing you decide, and it was not being said. */
+.palgroup {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-3);
+  padding: 0 14px; margin: 2px 0 5px;
+  display: flex; align-items: center; gap: 8px;
+}
+.palgroup::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
+.palgroup + .palette { margin-bottom: 10px; }
+.palette { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; padding: 0 12px 4px; }
+.pal {
+  text-align: left; cursor: pointer; min-height: 54px;
+  background: #fff; border: 1px solid var(--line);
+  padding: 7px 8px 8px; line-height: 1.25;
+  transition: background .16s var(--ease), border-color .16s var(--ease);
+}
+.pal:hover { border-color: var(--ink); background: var(--sage); }
+.pal b { display: block; font-size: var(--fs-label); font-weight: 600; letter-spacing: var(--tr-l); }
+.pal i {
+  display: block; margin-top: 2px;
+  font-family: var(--prose); font-style: normal; font-weight: 400;
+  font-size: var(--fs-label); line-height: 1.25; letter-spacing: normal; color: var(--ink-3);
+}
+.pal:hover i { color: var(--sage-ink); }
+
+/* ---------------- card list ---------------- */
+.cardlist { list-style: none; margin: 0; padding: 0 12px 8px; }
+.cardlist li {
+  display: grid; grid-template-columns: 1fr auto 14px; align-items: baseline; gap: 8px;
+  padding: 5px 7px; cursor: pointer;
+  border: 1px solid transparent; border-bottom-color: var(--line-2);
+}
+.cardlist li:hover { background: #fff; border-color: var(--line); }
+.cardlist li.is-sel { background: var(--sage); border-color: var(--ink); }
+/* NAME FIRST. The type used to lead in a 46px column of uppercase down the
+   left edge, which is the one thing on the row you already know — you picked
+   it from the palette. It trails as a quiet tag instead. */
+.cardlist .cl-name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--fs-label); font-weight: 500;
+}
+.cardlist .cl-type {
+  font-size: var(--fs-micro); letter-spacing: var(--tr-caps);
+  text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
+}
+.cardlist li.is-sel .cl-type { color: var(--sage-ink); }
+.cardlist .cl-bad { color: var(--apricot-ink); font-weight: 700; }
+.cardlist .cl-x {
+  opacity: 0; border: 0; background: none; cursor: pointer;
+  color: var(--ink-3); font-size: var(--fs-label); padding: 0;
+}
+.cardlist li:hover .cl-x { opacity: 1; }
+.cardlist li:hover .cl-x:hover { color: var(--apricot-ink); }
+.cardlist .empty {
+  display: block; color: var(--ink-3); font-family: var(--prose);
+  font-size: var(--fs-lg); letter-spacing: normal; padding: 4px 7px; border: 0;
+}
+
+.left-foot {
+  margin-top: auto; padding: 12px 14px;
+  border-top: 1px solid var(--line-2);
+  display: flex; align-items: center; gap: 12px;
+}
+
+/* ---------------- stage ---------------- */
+/* transparent on purpose: the squared paper on <body> is the backdrop the
+   panel sits on, and covering it here would throw away the whole conceit */
+.main { display: flex; flex-direction: column; min-width: 0; background: transparent; }
+.stage-wrap {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; padding: 26px;
+}
+/* the panel sits on the sheet like a drawn detail: hairline frame, corner ticks */
+.pf-holder { position: relative; }
+.pf-holder::before {
+  content: ""; position: absolute; inset: -15px; pointer-events: none;
+  border: 1px solid var(--line);
+}
+.pf-holder::after {
+  content: ""; position: absolute; inset: -15px; pointer-events: none;
+  background:
+    linear-gradient(var(--ink), var(--ink)) 0    0    / 14px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 0    0    / 1px 14px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 100% 0    / 14px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 100% 0    / 1px 14px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 0    100% / 14px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 0    100% / 1px 14px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 100% 100% / 14px 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 100% 100% / 1px 14px no-repeat;
+}
+.pf-stage {
+  position: relative; transform-origin: top left;
+  overflow: hidden; touch-action: none; user-select: none;
+  outline: 5px solid var(--screen);
+  /* The only shadow in the tool. PLATE has none on chrome, and the popups
+     and the modal have had theirs taken away — but this one is not chrome,
+     it is a physical panel lying on the drawing sheet. */
+  box-shadow: 0 8px 30px rgba(27,26,22,.26);
+}
+.stage-foot {
+  display: flex; align-items: center; gap: 16px;
+  height: 30px; padding: 0 14px;
+  color: var(--ink-3); font-size: var(--fs-micro);
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.stage-foot .field.inline > span { color: var(--ink-3); }
+.stage-foot .check {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font-size: var(--fs-micro); text-transform: uppercase;
+  letter-spacing: var(--tr-caps); font-weight: 600; color: var(--ink-3);
+}
+.stage-foot .dim { font-family: var(--data); letter-spacing: var(--tr-data); font-variant-numeric: tabular-nums; }
+/* The four keyboard shortcuts used to sit here permanently. They are worth
+   knowing once and worth nothing after that, so they are a hover-open note. */
+.keys { position: relative; }
+.keys > summary {
+  cursor: pointer; list-style: none;
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-3);
+  border-bottom: 1px dotted var(--ink-3); padding-bottom: 1px;
+}
+.keys > summary::-webkit-details-marker { display: none; }
+.keys > summary:hover { color: var(--ink); border-color: var(--ink); }
+.keys-pop {
+  position: absolute; bottom: 26px; left: 0; z-index: 40;
+  background: #fff; border: 1px solid var(--ink); padding: 9px 12px;
+  white-space: nowrap; display: grid; gap: 4px;
+  font-family: var(--prose); font-size: var(--fs-lg); letter-spacing: normal;
+  color: var(--ink-2); text-transform: none;
+}
+.keys-pop kbd {
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+  border: 1px solid var(--line); background: var(--panel); padding: 1px 5px; margin-right: 6px;
+}
+
+/* ---------------- panel widgets ---------------- */
+.pf-card { position: absolute; overflow: hidden; }
+.pf-card.is-sel { outline: 2px solid var(--sage-2); outline-offset: 1px; }
+.pf-box { position: absolute; }
+.pf-t {
+  position: absolute;
+  font-family: Roboto, 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: normal;
+  overflow: hidden;
+  /* LVGL's default long mode is WRAP, and it breaks a word that is wider
+   * than the label rather than letting it run out the side. CSS only breaks
+   * at spaces, so a too-long number was clipped here and would have wrapped
+   * on the wall — the preview has to fail the same way the panel does. */
+  overflow-wrap: anywhere;
+}
+.pf-symwrap { display: flex; align-items: center; justify-content: center; }
+.pf-sym { display: block; }
+.pf-arc { position: absolute; }
+.pf-bladewrap { position: absolute; animation: pf-spin 1.8s linear infinite; }
+.pf-blades { width: 100%; height: 100%; display: block; }
+@keyframes pf-spin { to { transform: rotate(360deg); } }
+
+.pf-guide { position: absolute; background: var(--apricot); pointer-events: none; }
+.pf-guide-v { top: 0; bottom: 0; width: 1px; }
+.pf-guide-h { left: 0; right: 0; height: 1px; }
+
+.pf-h {
+  position: absolute; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px;
+  background: var(--sage); border: 1px solid var(--ink);
+}
+.pf-h-nw { left: 0;    top: 0;    cursor: nwse-resize; }
+.pf-h-n  { left: 50%;  top: 0;    cursor: ns-resize; }
+.pf-h-ne { left: 100%; top: 0;    cursor: nesw-resize; }
+.pf-h-e  { left: 100%; top: 50%;  cursor: ew-resize; }
+.pf-h-se { left: 100%; top: 100%; cursor: nwse-resize; }
+.pf-h-s  { left: 50%;  top: 100%; cursor: ns-resize; }
+.pf-h-sw { left: 0;    top: 100%; cursor: nesw-resize; }
+.pf-h-w  { left: 0;    top: 50%;  cursor: ew-resize; }
+
+/* ---------------- inspector ---------------- */
+.tabs { display: flex; position: sticky; top: 0; background: var(--panel); z-index: 2; border-bottom: 1px solid var(--ink); }
+.tab {
+  flex: 1; padding: 11px 3px; background: none; border: 0; cursor: pointer;
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-3);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab:hover { color: var(--ink); }
+.tab.is-on { color: var(--ink); border-bottom-color: var(--sage-ink); }
+.tabbody { padding: 12px 14px 28px; }
+
+.group { margin-bottom: 18px; }
+.group > h3 {
+  margin: 0 0 10px; font-size: var(--fs-micro); text-transform: uppercase;
+  letter-spacing: var(--tr-caps); color: var(--ink-3); font-weight: 600;
+  border-bottom: 1px solid var(--line-2); padding-bottom: 6px;
+}
+/* A group that is a fold: the summary IS the heading, so an advanced block
+   can be shut without hiding that it exists. */
+.group > details > summary {
+  cursor: pointer; list-style: none;
+  margin: 0 0 10px; font-size: var(--fs-micro); text-transform: uppercase;
+  letter-spacing: var(--tr-caps); color: var(--ink-3); font-weight: 600;
+  border-bottom: 1px solid var(--line-2); padding-bottom: 6px;
+  display: flex; align-items: center; gap: 7px;
+}
+.group > details > summary::-webkit-details-marker { display: none; }
+.group > details > summary::before { content: "▸"; font-size: 9px; color: var(--ink-3); }
+.group > details[open] > summary::before { content: "▾"; }
+.group > details > summary:hover { color: var(--ink); }
+
+.f { margin-bottom: 10px; }
+.f > label { display: block; font-size: var(--fs-label); font-weight: 500; color: var(--ink-2); margin-bottom: 4px; }
+.f input[type=text], .f input[type=number], .f select, .f textarea { width: 100%; }
+
+/* Progressive disclosure: the first sentence of a hint stays visible, the
+   reasoning sits behind a "why" the user opens. Keeps every explanation
+   without making the panel a wall of prose. */
+.hint > .why { display: inline; }
+/* lowercase on purpose: this sits INSIDE a sentence, and setting it as a
+   tracked uppercase label made every hint look like it was shouting at the
+   end. */
+.hint > .why > summary {
+  display: inline; cursor: pointer; list-style: none;
+  font-family: var(--struct); font-size: var(--fs-micro); font-weight: 600;
+  letter-spacing: normal;
+  color: var(--ink-3); border-bottom: 1px dotted var(--ink-3);
+  padding-bottom: 1px; margin-left: 4px;
+}
+.hint > .why > summary::-webkit-details-marker { display: none; }
+.hint > .why > summary:hover { color: var(--ink); border-color: var(--ink); }
+.hint > .why[open] > summary { color: var(--ink-2); }
+.hint > .why[open] { display: block; margin-top: 5px; }
+.hint > .why[open] > summary { display: block; margin: 0 0 3px; }
+
+/* every hint, not just the ones inside a field — the card blurb sits directly
+   under the group heading and was falling back to the mono face */
+.hint {
+  font-family: var(--prose); font-weight: 400; font-size: var(--fs-lg);
+  letter-spacing: normal; color: var(--ink-3); margin-top: 5px; line-height: 1.45;
+}
+.hint b { font-weight: 600; color: var(--ink-2); }
+.hint code, .modal-note code {
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+  background: #fff; padding: 1px 4px; border: 1px solid var(--line-2);
+}
+.f.row { display: flex; gap: 8px; align-items: flex-end; }
+.f.row > * { flex: 1; }
+.f.checkline { display: flex; align-items: flex-start; gap: 9px; }
+.f.checkline input { margin-top: 2px; }
+.f.checkline label { margin: 0; font-size: var(--fs-label); font-weight: 500; letter-spacing: normal; color: var(--ink); }
+/* for a setting that is ours rather than something upstream does — worth
+   saying out loud, because it is the one kind that has no docs to check */
+.badge {
+  display: inline-block; vertical-align: 1px; margin-left: 6px;
+  font-family: var(--struct); font-size: var(--fs-micro); letter-spacing: var(--tr-caps);
+  text-transform: uppercase; font-weight: 600;
+  padding: 0 5px 1px; color: var(--apricot-ink);
+  background: var(--apricot); border: 1px solid var(--apricot-ink);
+}
+.geo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* one compact row per text slot: label left, control right */
+.szrow { display: grid; grid-template-columns: 1fr 122px; align-items: center; gap: 8px; margin-bottom: 5px; }
+.szrow > label { font-size: var(--fs-label); font-weight: 500; color: var(--ink-2); margin: 0; }
+.szrow > select, .szrow > input { width: 100%; height: 25px; font-size: var(--fs-micro); padding: 2px 6px; }
+/* a fold INSIDE a group — same idea as a folding group, one level down */
+.subfold { margin-top: 8px; }
+.subfold > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 7px;
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-3); padding-bottom: 5px;
+}
+.subfold > summary::-webkit-details-marker { display: none; }
+.subfold > summary::before { content: "▸"; font-size: 9px; }
+.subfold[open] > summary::before { content: "▾"; }
+.subfold > summary::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
+.subfold > summary:hover { color: var(--ink); }
+
+.colorrow { display: flex; gap: 8px; align-items: center; }
+.colorrow .btn { flex: 0 0 auto; }
+.empty-note { font-family: var(--prose); font-weight: 400; font-size: var(--fs-lg); letter-spacing: normal; color: var(--ink-2); line-height: 1.5; }
+.card-actions { display: flex; gap: 4px; margin-bottom: 15px; flex-wrap: wrap; }
+
+.symgrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; }
+.symgrid button {
+  aspect-ratio: 1; display: grid; place-items: center; cursor: pointer;
+  background: #fff; border: 1px solid var(--line); color: var(--ink-2); padding: 0;
+}
+.symgrid button:hover { border-color: var(--ink); background: var(--sage); }
+.symgrid button.is-on { border-color: var(--ink); background: var(--sage); color: var(--sage-ink); }
+.symgrid button.none { font-size: var(--fs-micro); letter-spacing: var(--tr-caps); color: var(--ink-3); }
+
+/* MDI icons, behind a fold: 90 of them would otherwise bury the eight fields
+   under the picker, and the built-in glyphs are the free option so they stay
+   on top. Opens by itself when the card is already using one. */
+.symmore { margin-top: 8px; }
+.symmore > details > summary {
+  cursor: pointer; list-style: none;
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-2);
+  border-bottom: 1px dotted var(--ink-3); display: inline-block; padding-bottom: 1px;
+}
+.symmore > details > summary::-webkit-details-marker { display: none; }
+.symmore > details > summary:hover { color: var(--ink); border-color: var(--ink); }
+.symmore > details[open] > summary { color: var(--ink); margin-bottom: 6px; }
+.symmore .hint { margin: 0 0 8px; }
+.symgroup {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tr-caps);
+  font-weight: 600; color: var(--ink-3); margin: 8px 0 3px;
+}
+
+/* ---------------- entity search ----------------
+   position: fixed, because the inspector column scrolls and an absolutely
+   positioned child would be clipped by it. Placed from the input's rect. */
+.epick {
+  position: fixed; z-index: 60; display: none;
+  overflow-y: auto; overscroll-behavior: contain;
+  background: #fff; border: 1px solid var(--ink);
+}
+.epick-row {
+  padding: 6px 8px 7px; cursor: pointer; position: relative;
+  border-bottom: 1px solid var(--line-2);
+}
+.epick-row:last-child { border-bottom: 0; }
+.epick-row:hover, .epick-row.is-on { background: var(--sage); }
+.epick-name {
+  font-size: var(--fs-label); font-weight: 500; line-height: 1.25;
+  color: var(--ink); padding-right: 64px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.epick-name i { color: var(--ink-3); font-style: normal; }
+/* an entity id IS data */
+.epick-id {
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+  color: var(--ink-3); padding-right: 64px; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* the match itself, in both lines */
+.epick-name b, .epick-id b { font-weight: 700; color: var(--apricot-ink); }
+.epick-dom {
+  position: absolute; right: 6px; top: 7px;
+  font-size: var(--fs-micro); letter-spacing: var(--tr-caps); text-transform: uppercase;
+  font-weight: 600; color: var(--ink-3); background: var(--paper);
+  border: 1px solid var(--line-2); padding: 0 4px 1px;
+  max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.epick-none {
+  padding: 8px; font-family: var(--prose); font-size: var(--fs-lg);
+  color: var(--ink-3); font-weight: 400;
+}
+
+/* ---------------- issues bar ----------------
+   One chip per KIND of problem, not one per card. Four cards sharing an
+   entity used to fill the bar with four near-identical sentences and push
+   everything else behind "+n more". */
+.issues {
+  height: 28px; display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; font-size: var(--fs-micro); letter-spacing: var(--tr-caps);
+  text-transform: uppercase; font-weight: 600;
+  background: var(--panel); border-top: 1px solid var(--ink);
+  overflow-x: auto; white-space: nowrap;
+}
+.issues .ok { color: var(--sage-ink); }
+.issues .issue-head { color: var(--apricot-ink); }
+.issues .sep { color: var(--line); }
+.issues button {
+  background: none; border: 0; cursor: pointer; padding: 2px 0 3px; font: inherit;
+  letter-spacing: inherit; text-transform: inherit; color: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+}
+.issues button:hover { color: var(--ink); border-color: var(--ink); }
+.issues button.error { color: var(--apricot-ink); border-color: var(--apricot-ink); }
+.issues button.warn { color: #8a6a12; border-color: #d8c07a; }
+.issues .n {
+  font-family: var(--data); letter-spacing: var(--tr-data);
+  border: 1px solid currentColor; padding: 0 4px; margin-right: 6px;
+}
+
+/* ---------------- modal ---------------- */
+.modal {
+  position: fixed; inset: 0; background: rgba(27,26,22,.42);
+  display: grid; place-items: center; z-index: 50; padding: 26px;
+}
+.modal-card {
+  background: var(--panel); border: 1px solid var(--ink); width: min(1020px, 100%);
+  max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px; border-bottom: 1px solid var(--ink);
+}
+.modal-head h2 {
+  margin: 0; font-size: var(--fs-lg); font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tr-caps);
+}
+.modal-body { padding: 16px 18px 20px; overflow-y: auto; }
+
+.filetabs { display: flex; gap: 1px; margin-bottom: 12px; flex-wrap: wrap; }
+.filetabs button {
+  padding: 6px 11px; cursor: pointer;
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+  border: 1px solid var(--line); background: #fff;
+}
+.filetabs button:hover { border-color: var(--ink); }
+.filetabs button.is-on { border-color: var(--ink); background: var(--sage); font-weight: 700; }
+pre.code {
+  margin: 0; padding: 12px 14px; background: #fff; border: 1px solid var(--line);
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data); line-height: 1.6;
+  max-height: 52vh; overflow: auto; white-space: pre; color: var(--ink);
+}
+/* a code block with its own copy button sitting on it */
+.codeblock { position: relative; margin-bottom: 15px; }
+.codeblock > .btn { position: absolute; top: 7px; right: 7px; background: var(--panel); }
+.codeblock > .btn:hover { background: var(--sage); }
+/* two copy buttons side by side (the key box: whole line, or the bare key) */
+.codeblock > .cbtns { position: absolute; top: 7px; right: 7px; display: flex; gap: 6px; }
+.codeblock > .cbtns > .btn { background: var(--panel); }
+.codeblock > .cbtns > .btn:hover { background: var(--sage); }
+
+.modal-actions { display: flex; gap: 8px; align-items: center; margin-top: 13px; flex-wrap: wrap; }
+.modal-actions .hint { font-family: var(--prose); font-size: var(--fs-lg); letter-spacing: normal; color: var(--ink-3); margin: 0; }
+.modal-note {
+  font-family: var(--prose); font-weight: 400; font-size: 15px; letter-spacing: normal;
+  color: var(--ink-2); line-height: 1.55; margin: 0 0 15px;
+}
+.modal-note b { font-weight: 600; color: var(--ink); }
+.problems {
+  margin: 0 0 15px; padding: 11px 13px; background: var(--rose); border: 1px solid var(--ink);
+  font-size: var(--fs-label); letter-spacing: normal;
+}
+.problems ul { margin: 8px 0 0; padding-left: 18px; }
+.problems li { margin: 3px 0; }
+textarea.paste {
+  width: 100%; height: 210px;
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+}
+
+/* Steps in the generate dialog — the install instructions were a paragraph
+   you had to parse to find out how many things you had to do. */
+.steps { counter-reset: s; margin: 0 0 15px; padding: 0; list-style: none; }
+.steps li {
+  counter-increment: s; position: relative; padding: 0 0 11px 34px;
+  font-family: var(--prose); font-size: var(--fs-lg); line-height: 1.5; color: var(--ink-2);
+}
+.steps li::before {
+  content: counter(s, decimal-leading-zero); position: absolute; left: 0; top: 1px;
+  font-family: var(--data); font-size: var(--fs-micro); letter-spacing: var(--tr-data);
+  border: 1px solid var(--ink); background: var(--butter); padding: 1px 5px; color: var(--ink);
+}
+.steps li b { font-weight: 600; color: var(--ink); }
+
+@media (max-width: 1240px) {
+  .shell { grid-template-columns: 214px 1fr 300px; }
+  .brand-sub { display: none; }
+  .top-mid { gap: 10px; }
+}
+
+/* ---------------- too small to work ----------------
+   Under 900px the three-column shell has nowhere left to go, and `body` does
+   not scroll, so the editor does not get SMALLER — it gets broken. Swap it
+   for a sentence that says why. */
+.toosmall { display: none; }
+@media (max-width: 900px) {
+  .top, .shell, .issues { display: none !important; }
+  body { overflow: auto; }
+  .toosmall {
+    display: block; max-width: 30rem; margin: 0 auto;
+    padding: 15vh 26px 40px; text-align: center;
+  }
+  .toosmall img { width: 64px; height: 64px; margin: 0 auto 20px; display: block; }
+  .toosmall h1 {
+    font-family: var(--struct); font-weight: 600; font-size: 1.35rem;
+    letter-spacing: var(--tr-l); margin: 0 0 14px; color: var(--ink);
+  }
+  .toosmall p {
+    font-family: var(--prose); font-weight: 400; font-size: 1.05rem;
+    line-height: 1.5; color: var(--ink-2); margin: 0 0 12px;
+  }
+  .toosmall .tiny { font-size: .95rem; color: var(--ink-3); }
+}

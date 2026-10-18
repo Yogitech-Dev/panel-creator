@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!--
+  shot.html — a harness for taking screenshots of the editor in a given state,
+  because a headless browser can only load a URL and press nothing.
+
+  Serve the folder, then point a headless browser at:
+
+    tools/shot.html?t=panel                      the Panel tab
+    tools/shot.html?t=voice                      the Voice tab
+    tools/shot.html?t=export                     the generate dialog
+    tools/shot.html?p=<url to a .panelcreator.json>   load a project first
+
+  e.g. chrome --headless=new --window-size=1600,1000 --screenshot=out.png \
+       "http://127.0.0.1:8792/tools/shot.html?p=out/pf-test-hall/pf-test-hall.panelcreator.json"
+-->
+<html><head><meta charset="utf-8"><title>shot</title>
+<style>html,body{margin:0;height:100%;overflow:hidden}iframe{border:0;width:1600px;height:1000px}</style>
+</head><body>
+<iframe id="f" src="../index.html"></iframe>
+<script>
+document.getElementById('f').onload = function () {
+  var d = this.contentDocument, w = this.contentWindow;
+  var q = new URLSearchParams(location.search);
+  function go() {
+    var t = q.get('t');
+    if (t === 'export') d.getElementById('btnExport').click();
+    else if (t === 'import') d.getElementById('btnImport').click();
+    else if (t === 'card') {
+      /* the card tab is empty with nothing selected, so pick something */
+      var pick = q.get('type') || 'light';
+      var c = w.PF.store.get().cards.filter(function (x) { return x.type === pick; })[0];
+      if (c) w.PF.store.select(c.id);
+      d.querySelector('.tab[data-tab="card"]').click();
+    }
+    else if (t) d.querySelector('.tab[data-tab="' + t + '"]').click();
+  }
+  var p = q.get('p');
+  if (p) fetch(p).then(function (r) { return r.json(); })
+                 .then(function (j) { w.PF.store.replace(j); go(); });
+  else go();
+};
+</script></body></html>
