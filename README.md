@@ -32,9 +32,11 @@ The download comes with step-by-step instructions written for your panel. In sho
 
 1. In the ESPHome Builder, create a new device with the same name you used in Panel Creator.
 2. Edit it, select everything, and paste in the generated YAML.
-3. Put `panelcreator_ui.h` next to it in `/config/esphome/`, once. Every panel shares it.
-4. Add the encryption key to your secrets.
-5. Install over USB the first time, then wirelessly after that.
+3. Add the encryption key to your secrets.
+4. Install over USB the first time, then wirelessly after that.
+
+There's no file to upload. The config pulls its helper code from this repo's
+[`components/panelcreator`](components/panelcreator) when ESPHome builds it, pinned to a release tag.
 
 ## Running it locally
 

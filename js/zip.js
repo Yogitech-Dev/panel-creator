@@ -2,7 +2,7 @@
  * zip.js — a 90-line ZIP writer, store-only (no compression).
  *
  * The point of the download is one file that unpacks into the ESPHome
- * folder ready to build: the YAML, the header it will not compile without,
+ * folder ready to build: the YAML, its README,
  * and the fan sprite. A library would do it, but this page has to run from
  * a double-clicked file with no network, so it carries its own.
  *

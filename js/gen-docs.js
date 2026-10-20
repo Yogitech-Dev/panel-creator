@@ -35,7 +35,6 @@
     p('## What is in here');
     p('');
     var rows = [[name + '.yaml', 'the panel config']];
-    rows.push([PF.genHeader.fileName(project), 'C++ helpers. The YAML will not compile without it.']);
     if (blades) rows.push(['fanframes/', '12 PNGs, the spinning fan blades']);
     rows.push([name + '.panelcreator.json', 'the design, so you can edit it again later']);
     var col = rows.reduce(function (a, r) { return Math.max(a, r[0].length); }, 0) + 4;
@@ -44,7 +43,6 @@
     p('All of it goes in the same folder.');
     p('');
 
-    var hdr = PF.genHeader.fileName(project);
     var updating = project.deploy && project.deploy.mode === 'update';
 
     p('## ' + (updating ? 'Update' : 'Install'));
@@ -57,52 +55,29 @@
       p('3. Select everything in the editor and paste in `' + name + '.yaml`. **Save**.');
       p('4. **INSTALL** -> **Wirelessly**.');
       p('');
-      p('That is genuinely it. `' + hdr + '` is the same file for every panel and every');
-      p('version of it, so if you have installed a Panel Creator panel before, the copy');
-      p('already sitting next to your configs is the right one — leave it alone. A copy is');
-      p('in this zip only in case this is the first' + (blades ? ', and for the sprite frames' : '') + '.');
-      p('');
-      p('**Leave `secrets.yaml` alone too.** The block below is what a first-time install');
-      p('needs; your WiFi lines and encryption key are already there and still correct.');
+      p('**Leave `secrets.yaml` alone.** Your WiFi lines and encryption key are already');
+      p('there and still correct.');
     } else {
       p('1. In Home Assistant, open the **ESPHome Builder** add-on.');
-      p('2. **+ NEW DEVICE** -> **Continue** -> name it `' + name + '` -> **Skip** picking a board.');
-      p('   You only want the file it creates; you are about to replace it.');
-      p('3. **EDIT** the new device, select everything, and paste in `' + name + '.yaml`.');
-      p('4. **Once ever:** put `' + hdr + '`' + (blades ? ' and the `fanframes` folder' : '') + ' next to the `.yaml`.');
-      p('   See below for where that is — it is on the Home Assistant machine, not yours.');
-      p('   Every panel shares this one file, so you never do this step again.');
-      p('5. Add the lines below to `secrets.yaml` in that same folder, creating it if it');
-      p('   is not there yet.');
-      p('6. **INSTALL** -> **Plug into this computer** for the first flash, then OTA after that.');
+      p('2. Create a new device and name it `' + name + '`. Which board it suggests does not');
+      p('   matter: you are about to replace the file it writes.');
+      p('3. **EDIT** the new device, select everything, and paste in `' + name + '.yaml`. **Save**.');
+      if (blades) {
+        p('4. Put the `fanframes` folder next to the `.yaml`, in `/config/esphome/` on the Home');
+        p('   Assistant machine (File editor or Samba add-on). It holds the fan blade animation.');
+      }
+      p((blades ? '5' : '4') + '. Add the encryption key below to your secrets: **three dots -> Secrets ->');
+      p('   Add secret** in the Builder, or the line itself in `secrets.yaml`.');
+      p((blades ? '6' : '5') + '. Plug the Tab5 into your computer: **INSTALL** -> **Plug into this computer**.');
+      p('   Only the first install needs the cable. After that, **Wirelessly**.');
     }
     p('');
-    p('### Where the header goes, and why it is named that');
+    p('### Nothing else to upload');
     p('');
-    p('**In the same folder as the `.yaml`.** Not a subfolder, and not on the computer you');
-    p('are reading this on. ESPHome takes its config directory from the config file\'s own');
-    p('path, and `includes:` resolves against that — so a bare filename means "the file');
-    p('sitting next to me".');
-    p('');
-    p('Which folder that actually is depends on how you run ESPHome:');
-    p('');
-    p('* **Home Assistant add-on** (most people): `/config/esphome/`, on the Home Assistant');
-    p('  machine. Browse it with the **File editor** add-on, or over the network with');
-    p('  **Samba** at `\\\\homeassistant\\config\\esphome`. The Builder\'s own editor can paste');
-    p('  YAML but cannot put a file beside it, which is why you need one of those.');
-    p('* **Home Assistant Core** in a venv or container: the same `esphome/` folder inside');
-    p('  whatever you configured as the HA config directory.');
-    p('* **ESPHome on its own** (pip or its Docker image): just the directory you keep the');
-    p('  `.yaml` in and run `esphome` against. Nothing special to set up.');
-    p('');
-    p('**It is the same file for every panel**, so one copy serves all of them and a');
-    p('newer copy is always safe to overwrite an older one. That is deliberate: it is');
-    p('what makes every install after the first one a paste of the YAML and nothing');
-    p('else. It is deliberately not called `tab5_ui.h` either, because hand-written');
-    p('headers of that name exist with different function signatures.');
-    p('');
-    p('Not optional, though: the YAML will not compile without it, and on a voice build');
-    p('it carries the heap reservation that keeps the panel from boot-looping.');
+    p('The config pulls the Panel Creator helper code (the boot-loop fix and the colour');
+    p('helpers) from github.com/yogitech-dev/panel-creator when ESPHome builds it, pinned');
+    p('to release `' + PF.gen.componentRef + '`. The machine running the build needs internet, which it');
+    p('already does for ESPHome itself.');
     p('');
 
     p('### secrets.yaml');

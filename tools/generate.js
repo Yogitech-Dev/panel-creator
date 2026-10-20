@@ -21,7 +21,7 @@ const ROOT = path.join(__dirname, '..');
 /* fanframes.js is here so a generated project with spinning blades can be
  * validated as-is. Without the sprite next to the YAML, `esphome config` stops
  * at "Could not find file fanframes/fan00.png" and never reaches the config. */
-const MODULES = ['theme.js', 'catalog.js', 'fonts.js', 'mdi.js', 'store.js', 'layout.js', 'gen-header.js', 'gen-yaml.js', 'gen-docs.js', 'fanframes.js'];
+const MODULES = ['theme.js', 'catalog.js', 'fonts.js', 'mdi.js', 'store.js', 'layout.js', 'gen-yaml.js', 'gen-docs.js', 'fanframes.js'];
 
 function loadPF() {
   const sandbox = {
@@ -49,11 +49,9 @@ function emit(project, outdir, tag) {
   const p = PF.store.get();
   const issues = PF.store.issues();
   const yaml = PF.gen.yaml(p);
-  const header = PF.genHeader.build(p, { ink: PF.store.theme().ink });
   const readme = PF.docs.readme(p, PF.docs.newKey());
   fs.mkdirSync(outdir, { recursive: true });
   fs.writeFileSync(path.join(outdir, p.device.name + '.yaml'), yaml);
-  fs.writeFileSync(path.join(outdir, PF.genHeader.fileName(p)), header);
   if (p.cards.some((c) => c.type === 'fan' && c.opts.blades)) {
     const dir = path.join(outdir, 'fanframes');
     fs.mkdirSync(dir, { recursive: true });
@@ -70,7 +68,7 @@ function emit(project, outdir, tag) {
   const bad = issues.filter((i) => i.level === 'error');
   console.log(`${tag || p.device.name}: ${p.cards.length} cards, ${yaml.split('\n').length} lines` +
     (bad.length ? `  ** ${bad.length} errors: ${bad.map((b) => b.text).join('; ')}` : ''));
-  return { yaml, header, readme, issues };
+  return { yaml, readme, issues };
 }
 
 /* ---- self-test projects ------------------------------------------- */

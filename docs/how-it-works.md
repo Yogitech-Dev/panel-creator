@@ -17,7 +17,6 @@ build step and no install; nothing is left running when you close the tab.
 | File | What it is |
 |---|---|
 | `<name>.yaml` | the ESPHome config |
-| `panelcreator_ui.h` | C++ helpers. Identical for every panel — **upload it once, ever**. The YAML will not compile without it |
 | `README.md` | install steps written for whoever downloads it |
 | `fanframes/` | only when a fan card has spinning blades on |
 
@@ -29,27 +28,34 @@ ESPHome's defaults of `0.1 ohm` / `3.2 A` would report roughly twenty times the 
 
 `Save` also writes a `.panelcreator.json` project file. Load it back with `Open` to keep editing.
 
-**Everything goes in `/config/esphome/` together.** There used to be a single-file mode that
-inlined the helpers so there was nothing to upload beside the YAML, and it was dropped in
-August 2026. Its one real benefit was skipping that upload for someone without the File editor
-or Samba add-on. Against that it could not do voice, could not do the fan sprite, and could not
-have carried any of the asset-backed features since — so half its feature list was going to be
-switched off, on a second code path through the same 1,800-line generator.
+**There's nothing to upload beside the YAML.** The helper code lives in this repo as an ESPHome
+external component, `components/panelcreator`, and every generated config pulls it in with:
 
-The voice half of that was never a policy choice, and the reason is worth keeping: a voice build
-boot-loops on the ESP32-P4 unless an 8 kB region is kept out of the heap, and the line that does
-it — `SOC_RESERVE_MEMORY_REGION(...)` — expands to a `static` with a linker-section attribute,
-which has to sit at file scope. An ESPHome lambda is a function body, `includes:` only takes file
-paths (`core/config.py: valid_include`), and there is **no sdkconfig option** for it: the region
-is registered in `heap/port/esp32p4/memory_layout.c:115` with no `#ifdef` around it. So a config
-with no header beside it cannot carry the one line that keeps the panel bootable.
+```yaml
+external_components:
+  - source: github://yogitech-dev/panel-creator@v1.0.0
+    components: [panelcreator]
+
+panelcreator:
+```
+
+ESPHome downloads it when it builds, so a panel is a paste and nothing else. The tag pins it: a
+later change here can't change what an existing panel builds. The only exception is the fan
+sprite (`fanframes/`), which is image files and still has to sit next to the YAML.
+
+It used to be a header, `panelcreator_ui.h`, that you put next to the YAML once with the File
+editor or Samba add-on. It couldn't simply be inlined into the YAML: the boot-loop fix,
+`SOC_RESERVE_MEMORY_REGION(...)`, expands to a `static` with a linker-section attribute and has to
+sit at file scope. An ESPHome lambda is a function body, and there's **no sdkconfig option** for
+it: the region is registered in `heap/port/esp32p4/memory_layout.c` with no `#ifdef` around it.
+A component's own `.cpp` is file scope, which is why the component works where a lambda can't.
 
 ## What it knows that a blank YAML file does not
 
 Every one of these is baked in because getting it wrong looks like broken hardware rather than a
 mistake. Each one was found on real Tab5s, most of them the hard way.
 
-* **The SPM heap reservation** in the generated header. The P4 registers an 8 kB region at `0x30100000` as
+* **The SPM heap reservation**, in the component's `panelcreator.cpp`. The P4 registers an 8 kB region at `0x30100000` as
   heap, but `spi_flash`'s sanity check only accepts real DRAM — so a task stack that lands there
   asserts before `app_main`. No log, no screen, no WiFi, no OTA to roll back with. Reserving the
   region makes it impossible instead of unlikely.
@@ -415,7 +421,6 @@ js/icons.js      the LVGL symbol set redrawn as SVG, because a browser has no su
 js/mdi.js        90 Material Design icons as 24x24 path data, for the preview only
 js/entitypick.js the entity search: ranking (pure, testable) + the dropdown
 js/gen-yaml.js   the ESPHome config
-js/gen-header.js panelcreator_ui.h — the same bytes for every panel
 js/gen-docs.js   the README that ships in the download
 js/zip.js        a 90-line store-only ZIP writer
 js/inspector.js  the right-hand property panel
@@ -436,11 +441,10 @@ node tools/generate.js --selftest tools/out
 ```
 
 That writes six projects covering every card type, both speaker modes, both typefaces, both card
-corner styles, both fill orientations and a portrait panel. It writes `panelcreator_ui.h` and the
-sprite frames alongside each one, so a project is validatable where it lands — and since that
-header is identical everywhere, `md5sum tools/out/*/panelcreator_ui.h` collapsing to a single
-hash is the check that it has stayed project-independent. Then validate them with a local
-ESPHome install. `esphome config` isn't enough on its own; it passes configs that fail on the
+corner styles, both fill orientations and a portrait panel, with the sprite frames where a fan
+needs them. Then validate them with a local ESPHome install. To test an unreleased change to the
+component, point `external_components` at your checkout (`source: {type: local, path:
+components}`) instead of the GitHub tag. `esphome config` isn't enough on its own; it passes configs that fail on the
 board, so compile the richest one too:
 
 ```bash
@@ -457,48 +461,23 @@ Things that will trip you up on the way:
 * On Windows, keep the config path free of spaces. ESP-IDF's linker script generator fails with
   `ldgen.py: error: unrecognized arguments: ||` otherwise.
 
-## The header is uploaded once, ever
+## The component
 
-`panelcreator_ui.h` is **byte-identical for every panel and every regeneration** — the self-test
-asserts one MD5 across all six projects. So the install story is:
+`components/panelcreator/` is a normal ESPHome external component:
 
-* **first panel ever:** paste the YAML, put this one file next to it
-* **every panel and every change after that:** paste the YAML. That is the whole job.
+* `panelcreator.cpp` holds the SPM heap reservation, in its own file on purpose. It must exist
+  exactly once: a second copy with the same start address aborts the boot. A header can end up
+  included more than once; a `.cpp` is compiled once. The component also logs
+  `Panel Creator helpers <version>` at startup, which is the quick way to see it loaded.
+* `panelcreator.h` holds the colour helpers the light tiles call (`tab5::tint_light_tile` and
+  friends). ESPHome puts every component header into `esphome.h`, which `main.cpp` includes, so
+  the lambdas in the YAML see them. They're behind `#ifdef USE_LVGL_SLIDER` because ESPHome only
+  compiles in the LVGL widgets a config uses; a panel with no slider would otherwise fail on
+  `'lv_slider_get_min_value' was not declared`.
 
-It was not always so. The header used to be generated per project, which forced a file upload on
-every single change — download a zip, get it onto the Home Assistant machine, overwrite a file,
-then install. Two things made it project-specific, and both are gone:
-
-* **The colour helpers were omitted unless the panel had a dimmable light.** Not arbitrary: they
-  call `lv_slider_*`, and ESPHome only compiles in the LVGL widgets a config uses, so emitting
-  them on a sliderless panel failed with `'lv_slider_get_min_value' was not declared` in a file
-  nothing ever calls. That is now `#ifdef USE_LVGL_SLIDER` — ESPHome emits `USE_LVGL_<WIDGET>`
-  for each widget in use (`lvgl/__init__.py:477`), and `main.cpp` includes `esphome.h`, hence
-  `defines.h`, long before it includes this. Verified both ways: a panel with five sliders and a
-  panel with none both compile.
-* **The theme's ink colour was baked into two functions.** It is an argument now, so the YAML
-  passes it and the C++ stops caring which theme you picked.
-
-It is deliberately **not** called `tab5_ui.h`: hand-written headers of that name already exist
-with different signatures, and silently overwriting one would break it.
-
-## Where the header goes
-
-**In the same folder as the `.yaml`** — that is the rule, and it holds however ESPHome is being
-run. `includes:` resolves against the **config directory**, and the config directory is derived
-from the config file's own path (`CORE.config_dir` → `config_path.absolute().parent`). So a bare
-filename means "the file sitting next to me". Same for the sprite: `fanframes/fan00.png`.
-
-Which folder that *is* depends on the setup, which is why the generated README states the rule
-and then lists the cases rather than printing one path. With the Home Assistant add-on it is
-`/config/esphome/` **on the Home Assistant machine** — not on the computer running this editor,
-which is a genuinely easy thing to get stuck on. Standalone ESPHome has no special folder at all:
-it is wherever you keep the YAML.
-
-The ESPHome Builder only lists YAML in the **root** of `/config/esphome/` as a device, so every
-panel's config shares one folder — which is exactly why the header had to stop being per-panel.
-Three panels each wanting their own `tab5_ui.h` in one folder is a collision waiting to happen;
-three panels sharing one `panelcreator_ui.h` is just a file.
+To release a change: commit it, tag it (`v1.0.1`), push the tag, then bump `COMPONENT_REF` in
+`js/gen-yaml.js`. Bump only after the tag is on GitHub, or new configs point at a tag that
+doesn't exist.
 
 ## New panel, or updating one that is already on the wall
 

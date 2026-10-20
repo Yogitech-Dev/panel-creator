@@ -196,13 +196,11 @@
     var updating = p.deploy.mode === 'update';
     var apiKey = (p.api.encryption && !updating) ? PF.docs.newKey() : '';
     var yaml = PF.gen.yaml(p);
-    var header = PF.genHeader.build(p, { ink: PF.store.theme().ink });
     var readme = PF.docs.readme(p, apiKey);
     var proj = JSON.stringify(stripped(p), null, 2);
     var needFan = p.cards.some(function (c) { return c.type === 'fan' && c.opts.blades; });
 
     var files = [{ key: 'yaml', name: p.device.name + '.yaml', body: yaml }];
-    files.push({ key: 'h', name: PF.genHeader.fileName(p), body: header });
     files.push({ key: 'readme', name: 'README.md', body: readme });
     files.push({ key: 'json', name: p.device.name + '.panelcreator.json', body: proj });
 
@@ -245,22 +243,24 @@
         '<li>In <b>ESPHome Builder</b>, press <b>EDIT</b> on <code>' + esc(p.device.name) +
           '</code> — not <b>+ NEW DEVICE</b>.</li>' +
         '<li>Paste the YAML below over what is there.</li>' +
-        '<li><b>Install → Wirelessly</b>. That is the whole job — <code>' +
-          esc(PF.genHeader.fileName(p)) + '</code> is the same file for every panel, so the copy ' +
-          'already next to your configs is the right one.</li>' +
+        '<li><b>Install → Wirelessly</b>. That is the whole job.</li>' +
         '</ol><p class="modal-note"><b>Leave <code>secrets.yaml</code> alone.</b> No new ' +
         'encryption key was generated: changing it would rekey every panel reading that secret, ' +
         'and Home Assistant would drop the connection until you handed it the new one.</p>'
       : '<ol class="steps">' +
-        '<li><b>Download everything</b>, and unpack it where your ESPHome configs live. With the ' +
-          'Home Assistant add-on that is <code>/config/esphome/</code> <b>on the Home Assistant ' +
-          'machine</b>, not this one.' + (needFan ? ' The fan sprite frames are in the zip too.' : '') + '</li>' +
+        '<li>In <b>ESPHome Builder</b>, create a new device and name it <code>' + esc(p.device.name) +
+          '</code>. Which board it suggests does not matter: you are about to replace the file.</li>' +
+        '<li><b>EDIT</b> it, select everything, and paste the YAML below over it. <b>Save</b>.</li>' +
+        (needFan
+          ? '<li>Put the <code>fanframes</code> folder from the zip next to it in <code>/config/esphome/</code>, ' +
+            'on the Home Assistant machine. It holds the fan blade animation.</li>'
+          : '') +
         (apiKey
-          ? '<li>Add <b>one line</b> to <code>secrets.yaml</code> — the box below, ' +
-            'or copy it out of README.md.</li>'
+          ? '<li>Add the encryption key to your secrets: the box below.</li>'
           : '<li>Nothing to add to <code>secrets.yaml</code>: this config only uses ' +
             'the WiFi keys the ESPHome add-on already put there.</li>') +
-        '<li>In <b>ESPHome Builder</b>, adopt the new config and install it.</li>' +
+        '<li>Plug the Tab5 into this computer and <b>Install → Plug into this computer</b>. ' +
+          'Only the first install needs the cable; after that, <b>Wirelessly</b>.</li>' +
         '</ol>' + secretsBlock +
         '<p class="modal-note">Already have this panel on the wall? Set <b>This panel is → ' +
         'Already installed</b> on the Panel tab and generate again — the steps and the key ' +
